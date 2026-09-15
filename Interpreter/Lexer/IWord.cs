@@ -1,4 +1,4 @@
-namespace Interpretator.Lexer;
+namespace Interpreter.Lexer;
 
 public interface IWord
 {

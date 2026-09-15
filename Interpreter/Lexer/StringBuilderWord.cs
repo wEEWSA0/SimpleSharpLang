@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Interpretator.Lexer;
+namespace Interpreter.Lexer;
 
 public class StringBuilderWord(StringBuilder stringBuilder) : IWord
 {

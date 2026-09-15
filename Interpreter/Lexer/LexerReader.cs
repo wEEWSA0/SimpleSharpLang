@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Interpretator.Lexer;
+namespace Interpreter.Lexer;
 
 public class LexerReader
 {
@@ -40,6 +40,13 @@ public class LexerReader
         
         token = null;
         return false;
+    }
+
+    public bool Flush([NotNullWhen(true)] out Token? token)
+    {
+        // TODO: Доделать
+        token = null;
+        return token is not null;
     }
     
     LexerStageResult? TryProcessEndOfLine(char c)
@@ -86,5 +93,11 @@ public class LexerReader
     {
         public bool SkipNextStages { get; init; }
         public Token? Token { get; init; }
+    }
+    
+    private enum LexerReadState
+    {
+        None,
+        EndOfLine
     }
 }

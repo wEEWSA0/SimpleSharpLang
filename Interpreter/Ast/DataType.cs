@@ -1,4 +1,4 @@
-namespace Interpretator.Ast;
+namespace Interpreter.Ast;
 
 public enum DataType
 {

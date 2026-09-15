@@ -1,4 +1,4 @@
-namespace Interpretator.Ast.Expression;
+namespace Interpreter.Ast.Expression;
 
 /// <summary>
 /// Выражения семантического дерева

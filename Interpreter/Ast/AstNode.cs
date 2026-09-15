@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Interpretator.Ast;
+namespace Interpreter.Ast;
 
 /// <summary>
 /// Корень семантического дерева
