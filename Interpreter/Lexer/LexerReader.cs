@@ -51,41 +51,42 @@ public class LexerReader
     
     LexerStageResult? TryProcessEndOfLine(char c)
     {
-        if (c is '\n' or '\r')
+        if (c is '\n' or '\r' && _state is not LexerReadState.EndOfLine)
         {
-            if (_word.Length == 0)
+            // Всегда одиночный перенос строки
+            if (c is '\n')
             {
-                if (c is '\n')
-                {
-                    _line++;
-                    _column = 1;
-                    return new LexerStageResult
-                    {
-                        SkipNextStages = true
-                    };
-                }
-
-                _word.Append(c);
-                _state = LexerReadState.EndOfLine;
+                _line++;
+                _column = 1;
                 return new LexerStageResult
                 {
                     SkipNextStages = true
+                    //Token = new Token(TokenType.EndOfLine) TODO: Для строк и комментариев
                 };
             }
-                    
-            if (_word.Length == 1)
+
+            // Перенос из потенциально двух символов "\r\n"
+            _state = LexerReadState.EndOfLine;
+            return new LexerStageResult
             {
-                    
-            }
+                SkipNextStages = true
+            };
         }
-        else if (_state is LexerReadState.EndOfLine)
+        
+        if (_state is LexerReadState.EndOfLine)
         {
             _state = LexerReadState.None;
-            _word.Clear();
             _line++;
             _column = 1;
+
+            return new LexerStageResult
+            {
+                // Пропускаем стадии, если текущий символ '\n' (итог в виде "\r\n"),
+                // не пропускаем, если иной, то есть символом переноса строки был '\r'
+                SkipNextStages = c is '\n'
+            };
         }
-            
+
         return null;
     }
     
