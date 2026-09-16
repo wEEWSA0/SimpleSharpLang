@@ -1,6 +1,6 @@
 namespace Interpreter.Lexer;
 
-public class Token
+public record Token
 {
     public string? Value { get; private init; }
     public TokenType Type { get; private init; }
@@ -29,10 +29,15 @@ public enum TokenType
     Continue,
     BoolLiteral,
     Null,
+    IntLiteral,
     StringLiteral,
     StringBegin,
     StringEnd,
     CharLiteral,
-    CharBegin,
-    CharEnd
+    Single,
+    CharEnd,
+    OpenParenthesis,
+    CloseParenthesis,
+    Error,
+    EndOfFile
 }

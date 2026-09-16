@@ -1,104 +1,147 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace Interpreter.Lexer;
 
-public class LexerReader
+public class LexerReader(TextScanner scanner)
 {
-    private int _line = 1, _column = 1;
-    private LexerReadState _state = LexerReadState.None;
-    private readonly IWord _word;
-    
-    private readonly Func<char, LexerStageResult?>[] _stages;
+    private readonly Dictionary<string, TokenType> _keyWords = new()
+    {
+        { "break", TokenType.Break }
+    };
 
-    public LexerReader(IWord word)
+    public IReadOnlyList<Token> Tokenize() // TODO: Подумать над сигнатурой и реализацией
     {
-        _word = word;
-        _stages = [
-            TryProcessEndOfLine
-        ];
-    }
-    
-    public bool ReadToken(char c, [NotNullWhen(true)] out Token? token)
-    {
-        // TODO: Обработка комментариев
-        // TODO: Обработка строк
+        List<Token> tokens = new();
+
+        Token token = ReadToken();
         
-        for (var i = 0; i < _stages.Length; i++)
+        for (;
+             token.Type != TokenType.Error && token.Type != TokenType.EndOfFile;
+             token = ReadToken())
         {
-            var stage = _stages[i];
-            var result = stage.Invoke(c);
-
-            if (!result.HasValue)
-                continue;
-
-            if (result.Value.SkipNextStages || i + 1 == _stages.Length)
-            {
-                token = result.Value.Token;
-                return token != null;
-            }
+            tokens.Add(token);
         }
         
-        token = null;
-        return false;
-    }
+        tokens.Add(token);
 
-    public bool Flush([NotNullWhen(true)] out Token? token)
-    {
-        // TODO: Доделать
-        token = null;
-        return token is not null;
+        return tokens;
     }
     
-    LexerStageResult? TryProcessEndOfLine(char c)
+    private Token ReadToken()
     {
-        if (c is '\n' or '\r' && _state is not LexerReadState.EndOfLine)
+        SkipWhiteSpaces();
+        
+        if (!scanner.TryPeek(out char? c))
         {
-            // Всегда одиночный перенос строки
-            if (c is '\n')
-            {
-                _line++;
-                _column = 1;
-                return new LexerStageResult
-                {
-                    SkipNextStages = true
-                    //Token = new Token(TokenType.EndOfLine) TODO: Для строк и комментариев
-                };
-            }
-
-            // Перенос из потенциально двух символов "\r\n"
-            _state = LexerReadState.EndOfLine;
-            return new LexerStageResult
-            {
-                SkipNextStages = true
-            };
+            return new Token(TokenType.EndOfFile) { Column = 67, Line = 67 };
         }
         
-        if (_state is LexerReadState.EndOfLine)
-        {
-            _state = LexerReadState.None;
-            _line++;
-            _column = 1;
+        return
+            char.IsAsciiLetter(c.Value)
+            ? ParseIdentifierOrKeyword()
 
-            return new LexerStageResult
-            {
-                // Пропускаем стадии, если текущий символ '\n' (итог в виде "\r\n"),
-                // не пропускаем, если иной, то есть символом переноса строки был '\r'
-                SkipNextStages = c is '\n'
-            };
+            : char.IsAsciiDigit(c.Value)
+            ? ParseIntLiteral()
+
+            : c == '\"'
+            ? ParseStringLiteral()
+
+            : c == '\''
+            ? ParseCharLiteral()
+
+            : ParseSingleSymbol(); //TODO: Rename
+    }
+
+    private Token ParseIdentifierOrKeyword()
+    {
+        if (TryGetValue(c=> scanner.IsEnd() || char.IsWhiteSpace(c.Value), out string? value))
+        {
+            return _keyWords.TryGetValue(value, out TokenType type)
+                ? new Token(type) { Column = 67, Line = 67 }
+                : new Token(TokenType.Identifier, value) { Column = 67, Line = 67 };
         }
 
-        return null;
+        return new Token(TokenType.Error) { Column = 67, Line = 67 }; // TODO: Здесь можно теоеретически выводить инфу об ошибке
     }
     
-    private record struct LexerStageResult
+    private Token ParseIntLiteral()
     {
-        public bool SkipNextStages { get; init; }
-        public Token? Token { get; init; }
+        return TryGetValue(c => scanner.IsEnd() || !char.IsAsciiDigit(c.Value), out string? value)
+            ? new Token(TokenType.IntLiteral, value) { Column = 67, Line = 67 }
+            : new Token(TokenType.Error) { Column = 67, Line = 67 };
     }
     
-    private enum LexerReadState
+    private Token ParseStringLiteral()
     {
-        None,
-        EndOfLine
+        scanner.Advance(); // Пропуск открывающей кавычки
+
+        return TryGetValue(c => c == '"', out string? value)
+            ? new Token(TokenType.StringLiteral, value) { Column = 67, Line = 67 }
+            : new Token(TokenType.Error, "Ошибка строкового литерала: Отсутствует закрывающая кавычка") { Column = 67, Line = 67 }; //TODO: Подумать точно ли такая ошибка
+    }
+
+    private Token ParseCharLiteral()
+    {
+        scanner.Advance(); // Пропуск открывающей кавычки
+
+        // TODO: Подумать не слишком ли сложно с тернарным оператором. Подумать над описанием ошибок
+        return !TryGetValue(c => c == '\'', out string? value)
+            ? new Token(TokenType.Error, "Ошибка символьного литерала: Отсутствует закрывающая кавычка") { Column = 67, Line = 67 }
+            : !IsValidCharValue(value)
+                ? new Token(TokenType.Error, "Ошибка символьного литерала: Значение не является валидным символом") { Column = 67, Line = 67 }
+                : new Token(TokenType.CharLiteral, value) { Column = 67, Line = 67 };
+    }
+    
+    private Token ParseSingleSymbol() //TODO: Придумать нормальное название
+    {
+        scanner.TryPeek(out char? c);
+        scanner.Advance();
+
+        return c switch
+        {
+            '(' => new Token(TokenType.OpenParenthesis) { Column = 67, Line = 67 }, // TODO: Доделать остальные символы
+            ')' => new Token(TokenType.CloseParenthesis) { Column = 67, Line = 67 },
+            _ => new Token(TokenType.Error) { Column = 67, Line = 67 },
+        };
+    }
+
+    private void SkipWhiteSpaces()
+    {
+        while (scanner.TryPeek(out char? c) && char.IsWhiteSpace(c.Value))
+        {
+            scanner.Advance();
+        }
+    }
+    
+    //TODO: ПРОВЕРИТЬ НУЖНО ЛИ ПРОПУСКАТЬ ПОСЛЕДНИЙ СИМВОЛ - ОСТАНОВКИ. (КАК БУДТО НУЖНО)
+    
+    private bool TryGetValue(Func<char?, bool> stopCondition, [NotNullWhen(true)] out string? value) // TODO: Подумать над неймингом, возможно сигнатурой
+    {
+        StringBuilder sb = new StringBuilder();
+        char? c;
+        
+        while (scanner.TryPeek(out c) && !stopCondition.Invoke(c.Value)) // Считываем пока не конец и пока не сработала остановка
+        {
+            sb.Append(c);
+            scanner.Advance();
+        }
+
+        if (stopCondition.Invoke(c))
+        {
+            value = sb.ToString();
+            scanner.Advance(); // TODO: Подумать, может быть избавиться от этого
+        }
+        else
+        {
+            value = null; //TODO: Отрефакторить
+        }
+
+        return stopCondition.Invoke(c); //TODO: Temp
+    }
+
+    private bool IsValidCharValue(string value) 
+    {
+        return value.Length == 1; //TODO: Добавить обработку ESCAPE-последовательностей
     }
 }
