@@ -4,20 +4,25 @@ public class LexerTokenReader<TState, TToken>
     where TState : struct, Enum
 {
     private int _line = 1, _column = 1;
-    private readonly IWord _word;
-    private readonly TState _defaultState;
+    private readonly ITokenBuffer _tokenBuffer;
     
     private TState _state;
     
     public required Func<TState, ILexerOptions, char, TToken> ErrorFunc { get; init; }
-    public required IReadOnlyList<(Func<char, bool> Condition, Func<ILexerOptions, IResponse<TState, TToken>> ResponseAction)> StartupEvents { get; init; }
-    public required IReadOnlyDictionary<TState, List<(Func<char, bool> Condition, Func<ILexerOptions, IResponse<TState, TToken>> ResponseAction)>> StateEvents { get; init; }
+    public required IReadOnlyDictionary<TState, List<(Func<char, bool> Condition, Func<ILexerOptions, IResponse<TState, TToken>> ResponseAction)>> StateTransitions { get; init; }
 
-    public LexerTokenReader(IWord word, TState defaultState)
+    /// <summary>
+    /// Создает новый экземпляр класса <see cref="LexerTokenReader{TState, TToken}"/>.
+    /// </summary>
+    /// <param name="tokenBuffer">
+    /// Буфер для временного хранения символов при создании токенов.
+    /// Должен быть пустым и не использоваться где-либо ещё, вне одного экземпляра класса <see cref="LexerTokenReader{TState, TToken}"/>
+    /// </param>
+    /// <exception cref="ArgumentNullException">Выбрасывается в случае передачи <c>null</c> в качестве <see cref="tokenBuffer"/></exception>
+    public LexerTokenReader(ITokenBuffer tokenBuffer)
     {
-        _word = word;
-        _word.Clear();
-        _defaultState = defaultState;
+        ArgumentNullException.ThrowIfNull(tokenBuffer);
+        _tokenBuffer = tokenBuffer;
     }
     
     // TODO: Отойти от fail first
@@ -26,62 +31,48 @@ public class LexerTokenReader<TState, TToken>
         List<TToken> tokens = [];
 
         while (fileReader.TryNext(out var c)) 
-            // TODO: Общий метод с учетом State.None + _word как буффер для отката (возможны разные реализации и подходы в целом)
+            // TODO: Общий метод с учетом State.None + _tokenBuffer как буффер для отката (возможны разные реализации и подходы в целом)
         {
-            Func<ILexerOptions, IResponse<TState, TToken>>? func = null;
-            
-            if (EqualityComparer<TState>.Default.Equals(_state, _defaultState))
-            {
-                foreach (var startupEvent in StartupEvents)
-                {
-                    if (startupEvent.Condition.Invoke(c.Value))
-                    {
-                        func = startupEvent.ResponseAction;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                if (!StateEvents.TryGetValue(_state, out var events))
-                {
-                    var errorToken = ErrorFunc.Invoke(_state, new LexerOptions
-                    {
-                        Column = _column,
-                        Line = _line,
-                        Word = _word
-                    }, c.Value);
-                    
-                    tokens.Add(errorToken);
-                    return tokens;
-                }
-                
-                foreach (var stateEvent in events)
-                {
-                    if (stateEvent.Condition.Invoke(c.Value))
-                    {
-                        func = stateEvent.ResponseAction;
-                        break;
-                    }
-                }
-            }
-            
-            if (func is null)
+            if (!StateTransitions.TryGetValue(_state, out var stateTransitions))
             {
                 var errorToken = ErrorFunc.Invoke(_state, new LexerOptions
                 {
                     Column = _column,
                     Line = _line,
-                    Word = _word
+                    TokenBuffer = _tokenBuffer
+                }, c.Value);
+                    
+                tokens.Add(errorToken);
+                return tokens;
+            }
+         
+            Func<ILexerOptions, IResponse<TState, TToken>>? transitionFunc = null;
+            
+            foreach (var stateTransition in stateTransitions)
+            {
+                if (stateTransition.Condition.Invoke(c.Value))
+                {
+                    transitionFunc = stateTransition.ResponseAction;
+                    break;
+                }
+            }
+            
+            if (transitionFunc is null)
+            {
+                var errorToken = ErrorFunc.Invoke(_state, new LexerOptions
+                {
+                    Column = _column,
+                    Line = _line,
+                    TokenBuffer = _tokenBuffer
                 }, c.Value);
                     
                 tokens.Add(errorToken);
                 return tokens;
             }
             
-            var result = func.Invoke(new LexerOptions
+            var result = transitionFunc.Invoke(new LexerOptions
             {
-                Word = _word,
+                TokenBuffer = _tokenBuffer,
                 Column = _column,
                 Line = _line
             });
@@ -106,6 +97,6 @@ public class LexerTokenReader<TState, TToken>
     {
         public int Line { get; init; }
         public int Column { get; init; }
-        public IWord Word { get; init; } // TODO: Убрать прямое обращение, данные в идеале лишь в Response меняются
+        public ITokenBuffer TokenBuffer { get; init; } // TODO: Убрать прямое обращение, данные в идеале лишь в Response меняются
     }
 }

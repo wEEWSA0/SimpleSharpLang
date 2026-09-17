@@ -9,10 +9,9 @@ public class LexerFileParser
 
     public LexerFileParser()
     {
-        _lexerTokenReader = new LexerTokenReader<LexerState, Token>(new StringBuilderWord(), LexerState.None)
+        _lexerTokenReader = new LexerTokenReader<LexerState, Token>(new StringBuilderTokenBuffer())
         {
-            StartupEvents = [],
-            StateEvents = new Dictionary<LexerState, List<(Func<char, bool> Condition, Func<ILexerOptions, IResponse<LexerState, Token>> ResponseAction)>>(),
+            StateTransitions = new Dictionary<LexerState, List<(Func<char, bool> Condition, Func<ILexerOptions, IResponse<LexerState, Token>> ResponseAction)>>(),
             ErrorFunc = (_, options, c) => 
                 new Token(TokenType.Error, $"Встретился неожиданный символ '{c}'") 
                 {

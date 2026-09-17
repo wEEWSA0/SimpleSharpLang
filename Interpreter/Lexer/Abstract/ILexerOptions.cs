@@ -4,5 +4,5 @@ public interface ILexerOptions
 {
     int Line { get; }
     int Column { get; }
-    IWord Word { get; }
+    ITokenBuffer TokenBuffer { get; }
 }
