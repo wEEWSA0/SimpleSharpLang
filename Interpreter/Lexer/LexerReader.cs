@@ -9,8 +9,83 @@ public class LexerReader(TextScanner scanner)
     {
         { "break", TokenType.Break }
     };
+    
+    private readonly Dictionary<State, Func<char, TransitionInfo>> _stateProcessors = new()
+    {
+        { 'a', new TransitionInfo(){NewState = State.IdentifierOrKeyword,  IsNeedFlush = true, IsNeedAppend = true} },
+    };
 
-    public IReadOnlyList<Token> Tokenize() // TODO: Подумать над сигнатурой и реализацией
+    private enum State
+    {
+        None,
+        IdentifierOrKeyword,
+        StringLiteral,
+        CharLiteral,
+        IntLiteral
+    }
+
+    private class TransitionInfo //TODO: Нейминг, скорее всего не класс, вынос, подумать
+    {
+        public State NewState { get; init; } //TODO: Подумать, что делать с лучаем когда NewState == OldState. Стоит ли перезаписывать?
+        public bool IsNeedFlush { get; init; } = false;
+        public bool IsNeedAppend { get; init; } = false;
+    }
+    
+    State _state;
+    IWord _currentValue;
+
+    public IReadOnlyList<Token> GetTokens(IFileReader fileReader)
+    {
+        List<Token> tokens = [];
+    
+        while (fileReader.TryNext(out var c))
+        {
+            if (TryGetToken(c, out Token? token))
+            {
+                tokens.Add(token);
+            }
+        }
+        
+        return tokens;
+    }
+
+    private bool TryGetToken(char c, out Token? token)
+    {
+        var _stateProcessor = _stateProcessors[_state];
+
+        var transitionInfo =  _stateProcessor.Invoke(c);
+
+        _state = transitionInfo.NewState;
+
+        if (transitionInfo.IsNeedAppend)
+        {
+            _currentValue.Append(c);
+        }
+
+        if (transitionInfo.IsNeedFlush)
+        {
+            token = GenerateToken();
+            _currentValue.Clear();
+            return true;
+        }
+
+        token = null;
+        return false;
+    }
+
+    private Token GenerateToken()
+    {
+        return _state switch
+        {
+            State.IdentifierOrKeyword => _keyWords.TryGetValue(_currentValue, out var tokenType)
+                ? new Token(tokenType){Line = 67, Column = 67}
+                : new Token(TokenType.Identifier, _currentValue){Line = 67, Column = 67},
+            State.StringLiteral => new Token(TokenType.StringLiteral, _currentValue){Line = 67, Column = 67},
+            State.IntLiteral => new Token(TokenType.IntLiteral, _currentValue){Line= 67, Column = 67},
+        };
+    }
+
+    /*public IReadOnlyList<Token> Tokenize() // TODO: Подумать над сигнатурой и реализацией
     {
         List<Token> tokens = new();
 
@@ -143,5 +218,5 @@ public class LexerReader(TextScanner scanner)
     private bool IsValidCharValue(string value) 
     {
         return value.Length == 1; //TODO: Добавить обработку ESCAPE-последовательностей
-    }
+    }*/
 }
