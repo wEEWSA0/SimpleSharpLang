@@ -54,9 +54,9 @@ public class LexerTokenReader<TState, TToken>
     
     private bool TryGetToken(char c, out TToken? token)
     {
-        var _stateTransiton = StateTransitions[_state];
+        var stateTransition = StateTransitions[_state];
 
-        var transitionInfo =  _stateTransiton.Invoke(c);
+        var transitionInfo =  stateTransition.Invoke(c);
 
         _state = transitionInfo.NewState;
 
