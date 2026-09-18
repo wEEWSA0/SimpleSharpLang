@@ -1,0 +1,42 @@
+// Старый код, мб поможет слегка в будущем
+// LexerStageResult? TryProcessEndOfLine(char c)
+// {
+//     if (c is '\n' or '\r' && _state.CommonState is not CommonState.EndOfLineProcessing)
+//     {
+//         // Всегда одиночный перенос строки
+//         if (c is '\n')
+//         {
+//             _line++;
+//             _column = 1;
+//             return new LexerStageResult
+//             {
+//                 SkipNextStages = true
+//                 //Token = new Token(TokenType.EndOfLine) TODO: Для строк и комментариев
+//             };
+//         }
+//
+//         // Перенос из потенциально двух символов "\r\n"
+//         _state = LexerReadState.EndOfLine;
+//         return new LexerStageResult
+//         {
+//             SkipNextStages = true
+//         };
+//     }
+//     
+//     if (_state is LexerReadState.EndOfLine)
+//     {
+//         _state = LexerReadState.None;
+//         _line++;
+//         _column = 1;
+//
+//         return new LexerStageResult
+//         {
+//             // Пропускаем стадии, если текущий символ '\n' (итог в виде "\r\n"),
+//             // не пропускаем, если иной, то есть символом переноса строки был '\r'
+//             SkipNextStages = c is '\n'
+//             //Token = new Token(TokenType.EndOfLine) TODO: Для строк и комментариев
+//         };
+//     }
+//
+//     return null;
+// }

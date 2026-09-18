@@ -1,4 +1,4 @@
-namespace Interpreter.Lexer;
+namespace Interpreter.Lexer.Realization;
 
 public class Token
 {
@@ -18,6 +18,7 @@ public class Token
 public enum TokenType
 {
     Identifier,
+    Error,
     EndOfLine,
     Struct,
     Var,
