@@ -1,5 +1,7 @@
 namespace Interpreter.Lexer.Abstract;
 
+using Position = (int line, int column);
+
 public class LexerTokenReader<TState, TToken>
     where TState : struct, Enum
 {
@@ -8,8 +10,18 @@ public class LexerTokenReader<TState, TToken>
     
     private TState _state;
     
-    public required Func<TState, ILexerOptions, char, TToken> ErrorFunc { get; init; }
-    public required IReadOnlyDictionary<TState, List<(Func<char, bool> Condition, Func<ILexerOptions, IResponse<TState, TToken>> ResponseAction)>> StateTransitions { get; init; }
+    public record struct TransitionInfo()
+    {
+        public TState NewState { get; init; } // TODO: Подумать, что делать с лучаем когда NewState == OldState. Стоит ли перезаписывать?
+        public bool IsNeedFlush { get; init; } = false;
+        public bool IsNeedAppend { get; init; } = false;
+    }
+    
+    public required IReadOnlyDictionary<TState, Func<char, TransitionInfo>> StateTransitions { get; init; }
+    // Запрашиваем правила переходов по автомату
+    
+    public required IReadOnlyDictionary<TState, Func<ITokenBuffer, Position, TToken>> TokenGenerators { get; init; }
+    // Запрашиваем правила генерации токенов по переходу
 
     /// <summary>
     /// Создает новый экземпляр класса <see cref="LexerTokenReader{TState, TToken}"/>.
@@ -25,78 +37,42 @@ public class LexerTokenReader<TState, TToken>
         _tokenBuffer = tokenBuffer;
     }
     
-    // TODO: Отойти от fail first
     public IReadOnlyList<TToken> GetTokens(IFileReader fileReader)
     {
         List<TToken> tokens = [];
-
-        while (fileReader.TryNext(out var c)) 
-            // TODO: Общий метод с учетом State.None + _tokenBuffer как буффер для отката (возможны разные реализации и подходы в целом)
+    
+        while (fileReader.TryNext(out var c))
         {
-            if (!StateTransitions.TryGetValue(_state, out var stateTransitions))
+            if (TryGetToken(c.Value, out TToken? token))
             {
-                var errorToken = ErrorFunc.Invoke(_state, new LexerOptions
-                {
-                    Column = _column,
-                    Line = _line,
-                    TokenBuffer = _tokenBuffer
-                }, c.Value);
-                    
-                tokens.Add(errorToken);
-                return tokens;
-            }
-         
-            Func<ILexerOptions, IResponse<TState, TToken>>? transitionFunc = null;
-            
-            foreach (var stateTransition in stateTransitions)
-            {
-                if (stateTransition.Condition.Invoke(c.Value))
-                {
-                    transitionFunc = stateTransition.ResponseAction;
-                    break;
-                }
-            }
-            
-            if (transitionFunc is null)
-            {
-                var errorToken = ErrorFunc.Invoke(_state, new LexerOptions
-                {
-                    Column = _column,
-                    Line = _line,
-                    TokenBuffer = _tokenBuffer
-                }, c.Value);
-                    
-                tokens.Add(errorToken);
-                return tokens;
-            }
-            
-            var result = transitionFunc.Invoke(new LexerOptions
-            {
-                TokenBuffer = _tokenBuffer,
-                Column = _column,
-                Line = _line
-            });
-
-            if (result.State is not null)
-                _state = result.State.Value;
-            if (result.Token is not null)
-                tokens.Add(result.Token);
-            if (result.Position is not null)
-            {
-                _line = result.Position.Value.Line;
-                _column = result.Position.Value.Column;
+                tokens.Add(token);
             }
         }
         
-        // TODO: Внутренний Flush метод мб нужен
-
         return tokens;
     }
     
-    private record struct LexerOptions : ILexerOptions
+    private bool TryGetToken(char c, out TToken? token)
     {
-        public int Line { get; init; }
-        public int Column { get; init; }
-        public ITokenBuffer TokenBuffer { get; init; } // TODO: Убрать прямое обращение, данные в идеале лишь в Response меняются
+        var _stateTransiton = StateTransitions[_state];
+
+        var transitionInfo =  _stateTransiton.Invoke(c);
+
+        _state = transitionInfo.NewState;
+
+        if (transitionInfo.IsNeedAppend)
+        {
+            _tokenBuffer.Append(c);
+        }
+
+        if (transitionInfo.IsNeedFlush)
+        {
+            token = TokenGenerators[_state].Invoke(_tokenBuffer, (_line, _column));
+            _tokenBuffer.Clear();
+            return true;
+        }
+
+        token = null;
+        return false;
     }
 }
