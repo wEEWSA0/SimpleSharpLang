@@ -13,4 +13,9 @@
       <Folder Include="Syntax\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Lexer.Abstractions\Lexer.Abstractions.csproj" />
+      <ProjectReference Include="..\Lexer\Lexer.csproj" />
+    </ItemGroup>
+
 </Project>

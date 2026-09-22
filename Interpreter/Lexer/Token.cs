@@ -18,6 +18,7 @@ public class Token
 public enum TokenType
 {
     Identifier,
+    Error,
     EndOfLine,
     Struct,
     Var,
