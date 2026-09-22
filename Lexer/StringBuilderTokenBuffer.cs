@@ -1,7 +1,7 @@
 using System.Text;
-using Interpreter.Lexer.Abstract;
+using Lexer.Abstractions;
 
-namespace Interpreter.Lexer.Realization;
+namespace Lexer;
 
 public class StringBuilderTokenBuffer : ITokenBuffer
 {

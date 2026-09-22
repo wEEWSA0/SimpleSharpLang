@@ -1,4 +1,4 @@
-namespace Interpreter.Lexer.Realization;
+namespace Interpreter.Lexer;
 
 public class Token
 {

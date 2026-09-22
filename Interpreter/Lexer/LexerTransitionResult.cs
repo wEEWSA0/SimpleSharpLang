@@ -1,8 +1,8 @@
-using Interpreter.Lexer.Abstract;
+using Lexer.Abstractions;
 
-namespace Interpreter.Lexer.Realization;
+namespace Interpreter.Lexer;
 
-public record struct LexerResponse : IResponse<LexerState, Token>
+public record struct LexerTransitionResult : ITransitionResult<LexerState, Token>
 {
     public Token? Token { get; init; }
     public LexerState? State { get; init; }

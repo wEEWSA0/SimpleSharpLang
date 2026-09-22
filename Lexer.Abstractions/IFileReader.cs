@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Interpreter.Lexer.Abstract;
+namespace Lexer.Abstractions;
 
 public interface IFileReader
 {

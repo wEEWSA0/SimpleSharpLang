@@ -1,4 +1,4 @@
-namespace Interpreter.Lexer.Abstract;
+namespace Lexer.Abstractions;
 
 public interface ITokenBuffer
 {

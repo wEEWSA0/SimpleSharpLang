@@ -1,7 +1,8 @@
 using System.Text;
-using Interpreter.Lexer.Abstract;
+using Lexer;
+using Lexer.Abstractions;
 
-namespace Interpreter.Lexer.Realization;
+namespace Interpreter.Lexer;
 
 public class LexerFileParser
 {
@@ -9,9 +10,9 @@ public class LexerFileParser
 
     public LexerFileParser()
     {
-        _lexerTokenReader = new LexerTokenReader<LexerState, Token>(new StringBuilderTokenBuffer())
+        _lexerTokenReader = new BaseLexer<LexerState, Token>
         {
-            StateTransitions = new Dictionary<LexerState, List<(Func<char, bool> Condition, Func<ILexerOptions, IResponse<LexerState, Token>> ResponseAction)>>(),
+            StateTransitionRules = new Dictionary<LexerState, IReadOnlyCollection<IStateTransitionRule<LexerState, Token>>>(),
             ErrorFunc = (_, options, c) => 
                 new Token(TokenType.Error, $"Встретился неожиданный символ '{c}'") 
                 {

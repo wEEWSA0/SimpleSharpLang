@@ -4,6 +4,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console", "Console\Console.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Interpreter", "Interpreter\Interpreter.csproj", "{DC917F85-99A1-4B82-8109-8DD4B923BAF3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lexer", "Lexer\Lexer.csproj", "{76285EB7-9AB9-4F33-ADAA-C90500968E89}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lexer.Abstractions", "Lexer.Abstractions\Lexer.Abstractions.csproj", "{34D93158-94A6-4C51-A012-939730A4B8E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{DC917F85-99A1-4B82-8109-8DD4B923BAF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC917F85-99A1-4B82-8109-8DD4B923BAF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC917F85-99A1-4B82-8109-8DD4B923BAF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76285EB7-9AB9-4F33-ADAA-C90500968E89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76285EB7-9AB9-4F33-ADAA-C90500968E89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76285EB7-9AB9-4F33-ADAA-C90500968E89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76285EB7-9AB9-4F33-ADAA-C90500968E89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34D93158-94A6-4C51-A012-939730A4B8E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34D93158-94A6-4C51-A012-939730A4B8E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34D93158-94A6-4C51-A012-939730A4B8E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34D93158-94A6-4C51-A012-939730A4B8E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
