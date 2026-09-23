@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lexer", "Lexer\Lexer.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lexer.Abstractions", "Lexer.Abstractions\Lexer.Abstractions.csproj", "{34D93158-94A6-4C51-A012-939730A4B8E1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Interpreter.Tests", "Interpreter.Tests\Interpreter.Tests.csproj", "{6DC28406-BA6E-4991-8833-7D6E8EA77DC2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{34D93158-94A6-4C51-A012-939730A4B8E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34D93158-94A6-4C51-A012-939730A4B8E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34D93158-94A6-4C51-A012-939730A4B8E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DC28406-BA6E-4991-8833-7D6E8EA77DC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DC28406-BA6E-4991-8833-7D6E8EA77DC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DC28406-BA6E-4991-8833-7D6E8EA77DC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DC28406-BA6E-4991-8833-7D6E8EA77DC2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
