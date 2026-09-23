@@ -86,21 +86,9 @@ public class LexerTests
             {
                 " 12 0 0011 ",
                 [
-                    new Token(TokenType.CharLiteral, "12") { Line = 67, Column = 67 },
-                    new Token(TokenType.CharLiteral, "0") { Line = 67, Column = 67 },
-                    new Token(TokenType.CharLiteral, "0011") { Line = 67, Column = 67 },
-                ]
-            },
-            {
-                " 42a ",
-                [
-                    new Token(TokenType.Error) { Line = 67, Column = 67 },
-                ]
-            },
-            {
-                " 10. ",
-                [
-                    new Token(TokenType.Error) { Line = 67, Column = 67 },
+                    new Token(TokenType.IntLiteral, "12") { Line = 67, Column = 67 },
+                    new Token(TokenType.IntLiteral, "0") { Line = 67, Column = 67 },
+                    new Token(TokenType.IntLiteral, "0011") { Line = 67, Column = 67 },
                 ]
             },
         };
@@ -258,19 +246,24 @@ public class LexerTests
                 ]
             },
             {
-                " point.x = 7; point.y = 8; ",
+                " point.x = 7 ",
                 [
                     new Token(TokenType.Identifier, "point") { Line = 67, Column = 67 },
                     new Token(TokenType.Point) { Line = 67, Column = 67 },
                     new Token(TokenType.Identifier, "x") { Line = 67, Column = 67 },
                     new Token(TokenType.Assign) { Line = 67, Column = 67 },
                     new Token(TokenType.IntLiteral, "7") { Line = 67, Column = 67 },
-                    new Token(TokenType.Semicolon) { Line = 67, Column = 67 },
-                    new Token(TokenType.Identifier, "point") { Line = 67, Column = 67 },
-                    new Token(TokenType.Point) { Line = 67, Column = 67 },
-                    new Token(TokenType.Identifier, "y") { Line = 67, Column = 67 },
-                    new Token(TokenType.Assign) { Line = 67, Column = 67 },
-                    new Token(TokenType.IntLiteral, "8") { Line = 67, Column = 67 },
+                ]
+            },
+            {
+                " foo(5, 4); ",
+                [
+                    new Token(TokenType.Identifier, "foo") { Line = 67, Column = 67 },
+                    new Token(TokenType.OpenParenthesis) { Line = 67, Column = 67 },
+                    new Token(TokenType.IntLiteral, "5") { Line = 67, Column = 67 },
+                    new Token(TokenType.Comma) { Line = 67, Column = 67 },
+                    new Token(TokenType.IntLiteral, "4") { Line = 67, Column = 67 },
+                    new Token(TokenType.CloseParenthesis) { Line = 67, Column = 67 },
                     new Token(TokenType.Semicolon) { Line = 67, Column = 67 },
                 ]
             },

@@ -56,6 +56,7 @@ public enum TokenType
     OpenBrace,
     CloseBrace,
     Point,
+    Comma,
     Semicolon,
     Error,
 }
