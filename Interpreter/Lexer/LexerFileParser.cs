@@ -56,7 +56,10 @@ public class LexerFileParser
                         new(LexerState.None)),
                     new StateTransitionRule<LexerState, TokenType>(
                         c => c == '1', 
-                        new Transition<LexerState, TokenType>(LexerState.None))
+                        new Transition<LexerState, TokenType>(LexerState.None)),
+                    new(
+                        c => c == '1', 
+                        new(LexerState.None, b => b.CreateTokenAndClearBuffer()))
                 ]
             },
             ErrorFunc = (state, c) => state switch
