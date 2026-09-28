@@ -2,77 +2,70 @@ using Lexer.Abstractions;
 
 namespace Lexer;
 
-public class BaseLexer<TState, TToken> : LexerTokenReader<TState, TToken>
+public class BaseLexer<TState, TToken, TTokenType> : LexerTokenReader<TState, TToken, TTokenType>
     where TState : struct, Enum
+    where TTokenType : struct, Enum
 {
-    public BaseLexer() : base(new StringBuilderTokenBuffer())
+    // TODO: Разделить StateTransitionRules: публичное api с билдером команд и внутренний с лишь экзекуторами команд
+    
+    public BaseLexer() : this(new StringBuilderTokenBuffer())
     {
     }
-    
+ 
+    /// <inheritdoc/>
     public BaseLexer(ITokenBuffer tokenBuffer) : base(tokenBuffer)
     {
     }
-
+    
     // TODO: Отойти от fail first
     public override IReadOnlyList<TToken> GetTokens(IFileReader fileReader)
     {
         List<TToken> tokens = [];
+        LexerContext context = new(tokens, TokenGenerationFunc)
+        {
+            Line = 1,
+            Column = 1,
+            TokenBuffer = TokenBuffer
+        };
 
         while (fileReader.TryNext(out var c)) 
-            // TODO: Общий метод с учетом State.None + TokenBuffer как буффер для отката (возможны разные реализации и подходы в целом)
         {
-            if (!StateTransitionRules.TryGetValue(State, out var stateTransitionRules))
+            context.CurrentSymbol = c.Value;
+            
+            if (!StateTransitionRules.TryGetValue(context.State, out var stateTransitionRules))
             {
-                var errorToken = ErrorFunc.Invoke(State, new LexerContext
-                {
-                    Column = Column,
-                    Line = Line,
-                    // TokenBuffer = TokenBuffer
-                }, c.Value);
+                var (tokenType, message) = ErrorFunc.Invoke(context.State, c.Value);
                     
-                tokens.Add(errorToken);
+                tokens.Add(TokenGenerationFunc.Invoke(tokenType, message, context));
                 return tokens;
             }
          
-            Func<ILexerContext, ITransitionResult<TState, TToken>>? transitionFunc = null;
+            StateTransitionRule<TState, TTokenType>? transitionRule = null;
             
             foreach (var stateTransitionRule in stateTransitionRules)
             {
                 if (stateTransitionRule.Condition.Invoke(c.Value))
                 {
-                    transitionFunc = stateTransitionRule.Transition;
+                    transitionRule = stateTransitionRule;
                     break;
                 }
             }
             
-            if (transitionFunc is null)
+            if (transitionRule is null)
             {
-                var errorToken = ErrorFunc.Invoke(State, new LexerContext
-                {
-                    Column = Column,
-                    Line = Line,
-                    // TokenBuffer = TokenBuffer
-                }, c.Value);
+                var (tokenType, message) = ErrorFunc.Invoke(context.State, c.Value);
                     
-                tokens.Add(errorToken);
+                tokens.Add(TokenGenerationFunc.Invoke(tokenType, message, context));
                 return tokens;
             }
             
-            var result = transitionFunc.Invoke(new LexerContext
-            {
-                // TokenBuffer = TokenBuffer,
-                Column = Column,
-                Line = Line
-            });
+            var result = transitionRule.Transition;
 
-            if (result.State is not null)
-                State = result.State.Value;
-            if (result.Token is not null)
-                tokens.Add(result.Token);
-            if (result.Position is not null)
+            context.State = result.State;
+            if (!result.Commands.IsEmpty)
             {
-                Line = result.Position.Value.Line;
-                Column = result.Position.Value.Column;
+                var commandsExecutor = result.Commands.GetExecutor();
+                commandsExecutor.Execute(context);
             }
         }
         
@@ -81,10 +74,25 @@ public class BaseLexer<TState, TToken> : LexerTokenReader<TState, TToken>
         return tokens;
     }
     
-    private record struct LexerContext : ILexerContext
+    private record LexerContext(
+        List<TToken> Tokens, 
+        Func<TTokenType, string?, ILexerContext, TToken> TokenGenerationFunc)
+        : ILexerCommandContext<TTokenType>, ILexerContext
     {
-        public int Line { get; init; }
-        public int Column { get; init; }
-        // public ITokenBuffer TokenBuffer { get; init; } // TODO: Убрать прямое обращение, данные в идеале лишь в Response меняются
+        public required ITokenBuffer TokenBuffer { get; init; }
+        public required int Line { get; set; }
+        public required int Column { get; set; }
+        
+        public char CurrentSymbol { get; set; }
+        public TState State { get; set; }
+
+        public void AddToken(TTokenType tokenType, string? value = null)
+        {
+            var token = TokenGenerationFunc.Invoke(
+                tokenType,
+                TokenBuffer.ToString(), 
+                this);
+            Tokens.Add(token);
+        }
     }
 }
