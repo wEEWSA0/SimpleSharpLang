@@ -46,4 +46,23 @@ public static class LexerCommandsExtensions
         builder.AddCommand(new NewLineCommand());
         return builder;
     }
+    
+    public static LexerCommandBuilder<TTokenType> AppendCharFromDictionary<TTokenType>( //TODO: Подумать над именем
+        this LexerCommandBuilder<TTokenType> builder,
+        Dictionary<char, char> escapeChars)
+        where TTokenType : struct, Enum
+    {
+        builder.AddCommand(new AppendCharFromDictionaryCommand(escapeChars));
+        return builder;
+    }
+    
+    public static LexerCommandBuilder<TTokenType> CreateTokenFromDictionary<TTokenType>( //TODO: Подумать над именем
+        this LexerCommandBuilder<TTokenType> builder,
+        Dictionary<string, TTokenType> tokenTypes,
+        TTokenType failureToken)
+        where TTokenType : struct, Enum
+    {
+        builder.AddCommand(new CreateTokenFromDictionaryCommand<TTokenType>(tokenTypes, failureToken));
+        return builder;
+    }
 }

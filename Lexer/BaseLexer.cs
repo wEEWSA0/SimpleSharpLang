@@ -30,47 +30,38 @@ public class BaseLexer<TState, TToken, TTokenType> : LexerTokenReader<TState, TT
 
         while (fileReader.TryNext(out var c)) 
         {
-            context.CurrentSymbol = c.Value;
+            context.CurrentChar = c.Value;
             
             if (!StateTransitionRules.TryGetValue(context.State, out var stateTransitionRules))
             {
-                var (tokenType, message) = ErrorFunc.Invoke(context.State, c.Value);
-                    
-                tokens.Add(TokenGenerationFunc.Invoke(tokenType, message, context));
-                return tokens;
+                return InvokeErrorFunc(tokens, context, c.Value);
             }
          
-            StateTransitionRule<TState, TTokenType>? transitionRule = null;
-            
-            foreach (var stateTransitionRule in stateTransitionRules)
-            {
-                if (stateTransitionRule.Condition.Invoke(c.Value))
-                {
-                    transitionRule = stateTransitionRule;
-                    break;
-                }
-            }
+            var transitionRule = stateTransitionRules.FirstOrDefault(rule => rule.Condition.Invoke(c.Value));
             
             if (transitionRule is null)
             {
-                var (tokenType, message) = ErrorFunc.Invoke(context.State, c.Value);
-                    
-                tokens.Add(TokenGenerationFunc.Invoke(tokenType, message, context));
-                return tokens;
+                return InvokeErrorFunc(tokens, context, c.Value);
             }
             
-            var result = transitionRule.Transition;
-
-            context.State = result.State;
-            if (!result.Commands.IsEmpty)
+            var transition = transitionRule.Transition;
+            context.State = transition.State;
+            
+            if (!transition.Commands.IsEmpty)
             {
-                var commandsExecutor = result.Commands.GetExecutor();
+                var commandsExecutor = transition.Commands.GetExecutor();
                 commandsExecutor.Execute(context);
             }
         }
         
-        // TODO: Внутренний Flush метод мб нужен
+        return tokens;
+    }
 
+    private IReadOnlyList<TToken> InvokeErrorFunc(List<TToken> tokens, LexerContext context, char c)
+    {
+        var (tokenType, message) = ErrorFunc.Invoke(context.State, c);
+                    
+        tokens.Add(TokenGenerationFunc.Invoke(tokenType, message, context));
         return tokens;
     }
     
@@ -83,7 +74,7 @@ public class BaseLexer<TState, TToken, TTokenType> : LexerTokenReader<TState, TT
         public required int Line { get; set; }
         public required int Column { get; set; }
         
-        public char CurrentSymbol { get; set; }
+        public char CurrentChar { get; set; }
         public TState State { get; set; }
 
         public void AddToken(TTokenType tokenType, string? value = null)

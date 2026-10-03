@@ -4,7 +4,7 @@ public interface ILexerCommandContext
 {
     int Line { get; set; }
     int Column { get; set; }
-    char CurrentSymbol { get; }
+    char CurrentChar { get; }
     ITokenBuffer TokenBuffer { get; }
 }
 
