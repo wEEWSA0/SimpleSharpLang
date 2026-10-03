@@ -6,19 +6,29 @@ namespace Interpreter.Lexer;
 
 public class LexerFileParser
 {
-    private readonly LexerTokenReader<LexerState, Token> _lexerTokenReader;
+    private readonly LexerTokenReader<LexerState, Token, TokenType> _lexerTokenReader;
 
     public LexerFileParser()
     {
-        _lexerTokenReader = new BaseLexer<LexerState, Token>
+        _lexerTokenReader = new BaseLexer<LexerState, Token, TokenType>
         {
-            StateTransitionRules = new Dictionary<LexerState, IReadOnlyCollection<IStateTransitionRule<LexerState, Token>>>(),
-            ErrorFunc = (_, options, c) => 
-                new Token(TokenType.Error, $"Встретился неожиданный символ '{c}'") 
-                {
-                    Line = options.Line,
-                    Column = options.Column
-                }
+            StateTransitionRules = SimpleSharpRules.Rules,
+            
+            ErrorFunc = (state, c) => state switch
+            {
+                LexerState.Main => (TokenType.Error, $"Встретился неожиданный символ в начальном состоянии '{c}'"),
+                LexerState.StringLiteral => (TokenType.Error, "Ожидался символ \""),
+                LexerState.StringEscapeCharacter => (TokenType.Error, $"Не найдено подходяее экранирование для '{c}'"),
+                LexerState.CharLiteral => (TokenType.Error, "Символьный литерал не может быть пустым"),
+                LexerState.CharReceived => (TokenType.Error, "Ожидался символ '"),
+                LexerState.CharEscapeCharacter => (TokenType.Error, $"Не найдено подходяее экранирование для '{c}'"),
+                _ => (TokenType.Error, $"Встретился неожиданный символ '{c}'")
+            },
+            TokenGenerationFunc = (type, value, context) => new Token(type, value)
+            {
+                Line = context.Line,
+                Column = context.Column
+            }
         };
     }
     

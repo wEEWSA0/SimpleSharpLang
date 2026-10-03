@@ -1,13 +1,13 @@
 namespace Interpreter.Lexer;
 
-public class Token
+public struct Token
 {
     public string? Value { get; private init; }
     public TokenType Type { get; private init; }
     public required int Line { get; init; }
     public required int Column { get; init; }
 
-    public Token(TokenType type, string? value = null)
+    public Token(TokenType type, string value = "") // TODO: Временно сделал всё пустыми строками, подумать в дальнейшем как быть
     {
         // TODO: Проверки возможности существования/несуществования значения для типа
         Value = value;
@@ -18,22 +18,46 @@ public class Token
 public enum TokenType
 {
     Identifier,
-    Error,
-    EndOfLine,
+    Int,
+    Bool,
+    String,
+    Char,
+    Num,
+    Uint,
+    True,
+    False,
     Struct,
-    Var,
     If,
     Else,
     While,
     Return,
     Break,
     Continue,
-    BoolLiteral,
-    Null,
+    IntLiteral,
     StringLiteral,
-    StringBegin,
-    StringEnd,
     CharLiteral,
-    CharBegin,
-    CharEnd
+    Plus,
+    Minus,
+    Multiply,
+    Divide,
+    Not,
+    And,
+    Or,
+    Assign,
+    Equals,
+    NotEquals,
+    LessThan,
+    GreaterThan,
+    LessThanOrEquals,
+    GreaterThanOrEquals,
+    OpenParenthesis,
+    CloseParenthesis,
+    OpenBracket,
+    CloseBracket,
+    OpenBrace,
+    CloseBrace,
+    Point,
+    Comma,
+    Semicolon,
+    Error,
 }
